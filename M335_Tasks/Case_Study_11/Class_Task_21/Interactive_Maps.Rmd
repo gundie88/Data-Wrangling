@@ -1,0 +1,39 @@
+---
+title: "Interactive Maps"
+author: "Keegan Gunderson"
+date: "March 20, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(leaflet)
+library(tidyverse)
+library(sf)
+library(maps)
+library(USAboundaries)
+library(ggrepel)
+
+states <- st_as_sf(map("state", plot = FALSE, fill = TRUE))
+id <- us_counties(states = "Idaho", resolution = "high")
+```
+
+
+```{r}
+us_cities <- us_cities(map_date = NULL) %>%
+  filter(state != "AK", state != "HI") %>%  #city != "Belvedere" grouped right thanks to Blake and Dylan 
+  group_by(state) %>%
+  filter(row_number(desc(population)) %in% c(1,2,3)) %>%
+  mutate(rank = rank(desc(population))) #Thanks Wolfe for this new idea!
+
+big_city <- us_cities %>%
+  group_by(state) %>%
+  filter(row_number(desc(population)) == 1) 
+```
+
+```{r}
+leaflet(data = us_cities) %>%
+  addTiles() %>%
+  addMarkers(~lon, ~lat, popup = ~as.character(city), 
+                   label = ~as.character(city))
+```
+

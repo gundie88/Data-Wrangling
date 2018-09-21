@@ -1,0 +1,42 @@
+---
+title: "Data to Answer Questions"
+author: "Keegan Gunderson"
+date: "February 1, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(devtools)
+library(readr)
+library(rio)
+
+Idaho_Crime <- read_csv("C:/Users/kgund/Documents/Winter Math 335/M335_GundersonK/M335_Tasks/Case_Study_04/Class_Task_08/CrimeStatebyState.csv", skip = 9)
+
+weather <- import("https://www.ncdc.noaa.gov/cag/time-series/us/10/00/tavg/all/12/1940-2014.csv?base_prd=true&begbaseyear=1940&endbaseyear=2014")
+
+```
+
+
+
+```{r}
+Idaho_Crime$`Revised rape /2` <- NULL
+Idaho_Crime$X9 <- NULL
+
+Idaho_Crime1 <- Idaho_Crime %>%
+  filter(!is.na(Population))
+
+Idaho_Crime1 = Idaho_Crime1[-c(56,57, 58),]
+
+```
+
+```{r}
+
+weather$Year <- str_extract_all(weather$Date, "[0-9]{4}")
+
+```
+

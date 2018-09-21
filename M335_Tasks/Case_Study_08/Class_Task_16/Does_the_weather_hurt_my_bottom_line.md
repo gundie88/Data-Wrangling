@@ -1,0 +1,56 @@
+---
+title: "Does the weather hurt my bottom line?"
+author: "Keegan Gunderson"
+date: "February 27, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+
+
+
+```r
+#shoutout to Cromar for the help on this par, I used some of his code.
+carwash <- df %>%
+  mutate(time = str_replace(df$time, "T", " ")) %>% 
+  separate(time, c("time", "z"), sep = -2) %>% 
+  select(-z) %>% 
+  mutate(time = ymd_hms(.$time, tz = "UTC")) %>%
+  mutate(mnt_time = with_tz(.$time, tzone = "America/Denver")) %>% 
+  mutate(mnt_time = hour(ceiling_date(.$time))) %>%
+  group_by(mnt_time) %>%
+  summarise(sales_total = sum(amount)) #Aggregate = add 
+
+weather <- RXE %>%
+  mutate( month = month(RXE$valid)) %>% 
+  select(tmpf, valid, month) %>% 
+  filter(!is.na(tmpf), month == 4 | month == 5 | month == 6 | month == 7) %>%
+  mutate(time = ymd_hms(.$valid, tz = "UTC")) %>%
+  mutate(mnt_time = hour(ceiling_date(.$time))) %>%
+  select(-c(valid, time))
+
+carwash1 <- carwash %>%
+  left_join(weather, by = "mnt_time") %>%
+  filter(!is.na(tmpf)) 
+```
+
+
+
+```r
+labels <- c("4" = "April", "5" = "May", "6" = "June", "7" = "July")
+
+ggplot(data = carwash1, aes(x = mnt_time, y = tmpf, fill = sales_total)) +
+  geom_hex() +
+  facet_grid(.~ month, labeller = labeller(month = labels)) +
+  labs(title = "Hourly Temperature and Car Wash Sales",
+       x = "Hour of the day",
+       y = "Temperature in f",
+       fill = "Sales Total") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "skyblue2"))
+```
+
+![](Does_the_weather_hurt_my_bottom_line_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+
+

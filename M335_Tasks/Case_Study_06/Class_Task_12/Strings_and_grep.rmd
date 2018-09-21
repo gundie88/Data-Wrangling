@@ -1,0 +1,55 @@
+---
+title: "Strings and grep"
+author: "Keegan Gunderson"
+date: "February 14, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(Lahman)
+library(blscrapeR)
+library(dplyr)
+library(stringr)
+```
+
+```{r}
+randomletters <- read_lines("https://byuistats.github.io/M335/data/randomletters.txt")
+
+randomletterswnumbers <- read_lines("https://byuistats.github.io/M335/data/randomletters_wnumbers.txt")
+```
+
+
+```{r}
+#randomletters %>%
+# str_split("", simplify = TRUE) %>%
+
+  #str_split(randomletters, "")
+ # str_extract_all(randomletters,"[^c(1,seq(1700, str_count(randomletters), by = 1700)]")
+
+#Split r letter sequence by splitting by every letter. (Breaks character into its own object), [[1]] getting out of the list cause the base function puts it into a list, The 1 is telling it to start at one.
+
+  str_split(randomletters, "")[[1]][c(1,seq(1700, str_count(randomletters), by = 1700))]
+
+```
+
+```{r}
+
+numbers <- randomletterswnumbers %>%
+  str_match_all("[0-9]+") %>%
+  unlist %>% #puts the list into a vector 
+  as.numeric
+# letters is a default object in R
+letters[numbers]
+```
+
+```{r}
+
+randomletterswnumbers %>%
+  str_replace(" ", "") %>%
+  str_replace("\\.", "") %>%
+  str_extract_all("[aeiou]{7}")
+
+```
+

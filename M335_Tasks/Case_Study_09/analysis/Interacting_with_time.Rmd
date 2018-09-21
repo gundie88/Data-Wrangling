@@ -1,0 +1,87 @@
+---
+title: "Interacting with time"
+author: "Keegan Gunderson"
+date: "March 11, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(tidyquant)
+library(quantmod)
+library(lubridate)
+library(DT)
+library(timetk)
+library(dygraphs)
+```
+
+
+```{r}
+#get stock ticker
+tickers <- c("CXW", "F", "GM", "JCP", "KR", "WDC", "NKE","T", "WDAY", "WFC", "WMT")
+
+#for ggplot
+stock1 <- tq_get(tickers, get  = "stock.prices",
+        from = "2013-1-01",
+         to   = "2018-1-01")
+
+#get that data for the last 5 years for dygraph
+stock2 <- tq_get(tickers, get  = "stock.prices",
+         from = "2013-1-01",
+         to   = "2018-1-01") %>%
+  select(symbol, date, adjusted) %>%
+  spread(key = symbol, value = adjusted) %>%
+  tk_xts(silent = TRUE)
+  
+```
+
+```{r}
+#Interactive graph
+dygraph(stock2, main = "Stock Price for last 5 Years", 
+        ylab = "Share Price", 
+        xlab = "Daily Prices") %>% 
+  dyHighlight(highlightCircleSize = 3,
+              highlightSeriesBackgroundAlpha = .2,
+              hideOnMouseOut = FALSE,
+              highlightSeriesOpts = list(strokeWidth = 3)) %>% 
+  dyLegend(show = "follow") %>% 
+  dyRangeSelector()
+
+```
+
+Summarizing my interactive graphic:  I added a range selector so you could zoom in and see specific share prices each day if you wanted.  I added the legend to follow you along as you move through the graph, I realize that this can be annoying so I am thinking about changing it. I also highlighted the line width so when you hover over it you are able to see the color and line better. I think that this turned out decent.
+
+
+```{r}
+#ggplot cant choose one but I think the col looks better
+stock3 <- stock1 %>%
+  mutate(month = floor_date(date, "month")) %>% 
+  group_by(symbol, month) %>%
+  summarise(volume = sum(volume))
+
+ggplot(data = stock3, aes(x = month, y = volume/10000000, color = symbol)) +
+  geom_col(colour = "black",
+           fill = "#8000ff") +
+  labs(title = "Company Stock Volumes",
+       subtitle = "each bar is a month",
+       x = "Date",
+       y = "Stock Volume in millions",
+       color = "Company") +
+  facet_grid(symbol~.)
+
+ggplot(data = stock3, aes(x = month, y = volume/10000000, color = symbol)) +
+  geom_point() +
+  labs(title = "Company Stock Volumes",
+       subtitle = "each dot is a month",
+       x = "Date",
+       y = "Stock Volume in millions",
+       color = "Company") +
+  facet_grid(symbol~.)
+
+```
+
+Summarizing my ggplot graphic:  I have two different graphs that show the exact same information because I was not sure which one I liked better, but I am leaning towards to geom_col graph because it is pretty easy to read. I am thinking about making the x axis ticks in months instead of just years to clarify that each column or dot is a month. You should be able to tell that this graph is for company stock volumes, overall I think this turned out okay. I need to mess with it and make it look a little better, comment in mine with suggestions to do please. Should I keep my bars all one color or make them different per group?

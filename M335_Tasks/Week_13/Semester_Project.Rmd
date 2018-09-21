@@ -1,0 +1,724 @@
+---
+output: 
+  html_document:
+    keep_md: yes
+    theme: readable
+    code_folding: hide
+    toc: true
+    toc_float: true
+    
+---
+```{r libraries, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(geofacet)
+library(buildings)
+library(tidyverse)
+library(sf)
+library(maps)
+library(USAboundaries)
+library(ggrepel)
+library(leaflet)
+library(geojsonio)
+library(rio)
+library(DT)
+library(stringr)
+library(mapview)
+library(geofacet)
+library(RColorBrewer)
+```
+
+<h1 id = "case">Graduation Percentage</h1>
+
+<p id = "name"> Keegan Gunderson</p>
+
+```{r read in data, message=FALSE, warning=FALSE, paged.print=FALSE}
+#Read in data for education for United State
+education <- import("https://www.ers.usda.gov/webdocs/DataFiles/48747/Education.xls?v=43125", skip = 4)
+
+#filter education for Idaho counties only 
+education_id <- education %>%
+  filter(State == "ID")
+
+#reading in some data on race
+#df <- import("K:/Documents/Winter Math 335/M335_GundersonK/M335_Tasks/Case_Study_12/data.csv")
+#reading in data on percent 
+#df1 <- import("K:/Documents/Winter Math 335/M335_GundersonK/M335_Tasks/Case_Study_12/Current v Former.csv", skip = 2) 
+
+df1 <- import("C:/Users/kgund/Documents/Winter Math 335/M335_GundersonK/M335_Tasks/Week_13/Current v Former.csv", skip = 1)
+```
+
+## Background
+
+<p id = "intro">Idaho's graduation rate is 79.7 percent while the national graduation rate sits at 84.1 percent which means that Idahoans are not completely hopeless in terms of getting through K-12. Preceding the examination of the data, the graduation rate of students in Idaho could influence your idea that this state is accomplished; but, in actuality Idaho's education raking is mediocre compared other states across the nation. Idaho ranks 46th in education and only 35.9 percent of Idahoans over age 25 hold a postsecondary degree, there are only 10 states ranked lower. Idaho's school systems are showing ineffectiveness to prepare students for future postsecondary degrees. Since there is an inadequacy in Idaho school systems we will pay attention to the educational attainment for adults age 25 and older for the years 1980, 1990, 2000, and 2012-2016.The data used for this study came from: Census Bureau, 1970, 1980, 1990, 2000 Censuses of Population, and the 2012-16 American Community Survey 5-yr average. The data consisted of each U.S., State, their respective counties, the percent of high school diplomas that were awarded, and the percent of adults with a bachelor degrees or higher.</p>
+
+```{r datatable, message=FALSE, warning=FALSE, paged.print=FALSE}
+#Select the amount of people that only got a high school diploma
+high_school_id <- education_id %>%
+  select(-contains("urban"), -contains("1970"))
+#-contains("college"), -contains("less"), -contains("higher"),
+  #mutate(V3 = "")
+#high_school_id <- high_school_id[-c(1),]
+
+df1 <- df1 %>% 
+  rename(state_name = `V1` , percent = `V2`) %>%
+  select(-`V3`)
+
+#df1 <- df1[-c(1),]
+
+
+dt <- merge(df1, high_school_id, by = "row.names", all = TRUE)
+#dt <- merge(x = , y = df1, all.y = TRUE)
+dt[is.na(dt)] <- 0
+
+#make a data table for the high school ID diploma 
+#datatable(dt, 
+#          extensions = 'Buttons', 
+#          options = list( 
+#            searchHighlight = TRUE,
+#            om = 'Bfrtip',
+#            pageLength = 5, autoWidth = TRUE, class = c("hover", 'cell-border stripe'),
+#            initComplete = JS(
+#    "function(settings, json) {",
+#    "$(this.api().table().header()).css({'background-color': '#009933 ', 'color': '#fff'});",
+#    "}")),rownames = FALSE,
+#    colnames = c("", "States", "Graduate percent", "FIPS Code","State ID", "County Name","number of High school diplomas (1980)", "Percent high school diplomas (1980)", "number of High school diplomas (1990)", "Percent high school diplomas (1990)", "number of High school diplomas (2000)", "Percent high school diplomas (2000)", "number of High school diplomas (2012-2016)", "Percent high school diplomas (2012-2016)"))
+```
+
+## Data Analysis
+
+<p id = "words>Below is an interactive graphic with state-by-state graduation rates.</p>
+
+<center>
+```{r nation leaflet, message=FALSE, warning=FALSE, paged.print=FALSE}
+#getting all states for national grad
+states_us <- us_states()
+
+
+#percent of all grads
+all_state <- df1 %>%
+  #rename(state_name = V1, percent = V2) %>%
+  group_by(`state_name`, `percent`) %>%
+  summarise()
+
+#join so I can put in leaflet
+percent_us_sp <- states_us %>%
+  left_join(all_state)
+
+#dont want puerto rico
+percent_us_sp <- percent_us_sp[-c(47),]
+
+pal <- colorNumeric(palette = "viridis", domain  = percent_us_sp$`percent`)
+
+#leaflet for who country grad percents
+leaflet(data = percent_us_sp) %>%
+  setView(-110, 47.5, zoom = 3) %>%
+  addLegend(pal = pal,
+            values = ~`percent`,
+            opacity = .7,
+            position = "bottomright",
+            labels = "percent") %>% 
+  addTiles() %>%
+  addPolygons(fillColor = ~pal(`percent`),
+              label = ~paste0(name, ": % ", formatC(`percent`, big.mark = ",")),
+              weight = 1,
+              opacity = .5,
+              color = "black",
+              dashArray = "1",
+              fillOpacity = .7,
+              highlight = highlightOptions(
+      weight = 5,
+      color = "#ff0066",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE)) %>%
+  addProviderTiles("MapBox", 
+                   options = providerTileOptions(id = "mapbox.light", 
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+```
+</center>
+
+<br>
+<p id = "words>This bar chart contains all the data that the graphic above has, it is another way to intellectually develop a visualization of the data so it's easier interpreted. The bars are ordered in descending order with the states that have the highest graduation percentages on top. I have added the numerical graduation percentage at the end of each bar to make it easier to interpret.</p>
+</br>
+
+
+```{r nation bar, fig.height=10, fig.width=15, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+
+ggplot(data = df1, aes(x = reorder(state_name, percent), y = percent)) + 
+  geom_bar(stat = "identity", fill = "darkturquoise" , color = "white") +
+  coord_flip() +
+  geom_text(aes(label = percent), hjust = 1.1, color = "black",
+            position = position_dodge(0.9), size = 3.5) +
+  scale_y_continuous(breaks = seq(0, 100, by = 25), expand = c(0, 0), labels = function(x) paste0(x,"%")) +
+  labs(title = "State by State 2015-16 Graduation Rates",
+       subtitle = "",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 40, face = "bold"), 
+        axis.text.x = element_text(size = rel(2)), axis.text.y = element_text(size = rel(1)))
+```
+
+<br>
+<p id = "words>Below are four interactive graphics of the state of Idaho; each having the graduation percentages per county, for having only a high school diploma or a bachelor's degree or higher. Below each interactive graphic is a comparison visualization of each county's graduation percentages for different years. High school diploma and bachelor's degree or higher are being compared so you can observe what county's graduates peruse a postsecondary degree.</p>
+</br>
+
+
+```{r 1980 leaflet high school, message=FALSE, warning=FALSE, paged.print=FALSE}
+#getting spatial data for ID
+counties <- us_counties() %>% 
+  filter(state_abbr == "ID")
+
+#making getting it read to join for 2000
+high_school_id1 <- high_school_id %>%
+  group_by(`Percent of adults with a high school diploma only, 1980`, `Area name`) %>%
+  summarise(count = `Percent of adults with a high school diploma only, 1980`) %>%
+  separate(`Area name`, c("name", "z"), sep = -7) %>% 
+  select(-z)
+
+#taking out idaho becuase thats the total number of people
+#high_school_id1 <- high_school_id1[-c(45),]
+
+#combining spatial data with high_school_id df
+spatial_dat_id1 <- counties %>%
+  left_join(high_school_id1, by = "name") 
+
+#leaflet for 2000
+#bins <- seq(0, 70000, 4000)
+pal <- colorNumeric("Oranges", domain = spatial_dat_id1$`count`)
+
+one <- leaflet(data = spatial_dat_id1) %>%
+  addLegend(pal = pal,
+            values = ~`count`,
+            opacity = .9,
+            title = " High school diploma <br>(1980)",
+            labFormat = labelFormat(prefix = "%")) %>%
+  setView(lng = -110.7420, lat = 45.0682, zoom = 5) %>%
+  addTiles() %>%
+  addPolygons(fillColor = ~pal(`count`),
+              label = ~paste0(name, ": % ", formatC(`count`, big.mark = ",")),
+              weight = 1,
+              opacity = .5,
+              color = "black",
+              dashArray = "1",
+              fillOpacity = .9,
+              highlight = highlightOptions(
+      weight = 5,
+      color = "#ff0066",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE)) %>%
+  addProviderTiles("MapBox", 
+                   options = providerTileOptions(id = "mapbox.light", 
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+```
+
+```{r 1980 leaflet bachelor, message=FALSE, warning=FALSE, paged.print=FALSE}
+#getting spatial data for ID
+counties <- us_counties() %>% 
+  filter(state_abbr == "ID")
+
+#making getting it read to join for 2000
+high_school_id2 <- high_school_id %>%
+  group_by(`Percent of adults completing four years of college or higher, 1980`, `Area name`) %>%
+  summarise(count = `Percent of adults completing four years of college or higher, 1980`) %>%
+  separate(`Area name`, c("name", "z"), sep = -7) %>% 
+  select(-z)
+
+#taking out idaho becuase thats the total number of people
+#high_school_id1 <- high_school_id1[-c(45),]
+
+#combining spatial data with high_school_id df
+spatial_dat_id2 <- counties %>%
+  left_join(high_school_id2, by = "name") 
+
+#leaflet for 2000
+#bins <- seq(0, 70000, 4000)
+pal <- colorNumeric("Oranges", domain = spatial_dat_id2$`count`)
+
+two <- leaflet(data = spatial_dat_id2) %>%
+  addLegend(pal = pal,
+            values = ~`count`,
+            opacity = .9,
+            title = "bachelor's degree<br> or higher (1980)",
+            labFormat = labelFormat(prefix = "%")) %>%
+  setView(lng = -110.7420, lat = 45.0682, zoom = 5) %>%
+  addTiles() %>%
+  addPolygons(fillColor = ~pal(`count`),
+              label = ~paste0(name, ": % ", formatC(`count`, big.mark = ",")),
+              weight = 1,
+              opacity = .5,
+              color = "black",
+              dashArray = "1",
+              fillOpacity = .9,
+              highlight = highlightOptions(
+      weight = 5,
+      color = "#ff0066",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE)) %>%
+  addProviderTiles("MapBox", 
+                   options = providerTileOptions(id = "mapbox.light", 
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+```
+
+```{r latticeView 1980, message=FALSE, warning=FALSE, paged.print=FALSE}
+latticeView(one, two)
+```
+
+```{r comparison 1980, fig.height=5, fig.width=15, message=FALSE, warning=FALSE, paged.print=FALSE}
+high_school_id_gg <- high_school_id %>%
+  rename(`d2012-2016` = `Percent of adults with a high school diploma only, 2012-2016`,
+         `d2000` = `Percent of adults with a high school diploma only, 2000`,
+         `d1990` = `Percent of adults with a high school diploma only, 1990`,
+         `d1980` = `Percent of adults with a high school diploma only, 1980`,
+         `b2012-2016` = `Percent of adults with a bachelor's degree or higher, 2012-2016`,
+         `b2000` = `Percent of adults with a bachelor's degree or higher, 2000`,
+         `b1990` = `Percent of adults with a bachelor's degree or higher, 1990`,
+         `b1980` = `Percent of adults completing four years of college or higher, 1980`) %>%
+  separate(`Area name`, c("Area name", "z"), sep = -7) %>% 
+  select(-z)
+
+ggplot(data = high_school_id_gg) +
+  geom_point(aes(x = `Area name`, y = `d1980`, color = "Diploma", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `d1980`,color = "Diploma", group = 1)) +
+  geom_point(aes(x = `Area name`, y = `b1980`, color = "Bachelors or Higher", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `b1980`, color = "Bachelors or Higher", group = 1)) +
+  scale_color_manual(breaks = c("Diploma", "Bachelors or Higher" ),
+                     values = c("orange","orange4")) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10), labels = function(x) paste0(x,"%")) +
+  coord_cartesian(ylim = c(10,50)) +
+  labs(title = "Educational Attainment Comparison",
+       subtitle = "Year: 1980",
+       x = " ",
+       y = " ",
+       color = "Type") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = rel(2)), axis.text.y = element_text(size = rel(2)),plot.title = element_text(size = 40, face = "bold"), plot.subtitle=element_text(size=30), legend.title=element_text(size=20), legend.text=element_text(size=15))
+```
+
+```{r 1990 leaflet, message=FALSE, warning=FALSE, paged.print=FALSE}
+#making getting it read to join for 2000
+high_school_id3 <- high_school_id %>%
+  group_by(`Percent of adults with a high school diploma only, 1990`, `Area name`) %>%
+  summarise(count = `Percent of adults with a high school diploma only, 1990`) %>%
+  separate(`Area name`, c("name", "z"), sep = -7) %>% 
+  select(-z)
+
+#taking out idaho becuase thats the total number of people
+#high_school_id1 <- high_school_id1[-c(45),]
+
+#combining spatial data with high_school_id df
+spatial_dat_id3 <- counties %>%
+  left_join(high_school_id3, by = "name") 
+
+#leaflet for 2000
+#bins <- seq(0, 70000, 4000)
+pal <- colorNumeric("Blues", domain = spatial_dat_id3$`count`)
+
+three <- leaflet(data = spatial_dat_id3) %>%
+  addLegend(pal = pal,
+            values = ~`count`,
+            opacity = .9,
+            title = "High school diploma <br>(1990)",
+            labFormat = labelFormat(prefix = "%")) %>%
+  setView(lng = -110.7420, lat = 45.0682, zoom = 5) %>%
+  addTiles() %>%
+  addPolygons(fillColor = ~pal(`count`),
+              label = ~paste0(name, ": % ", formatC(`count`, big.mark = ",")),
+              weight = 1,
+              opacity = .5,
+              color = "black",
+              dashArray = "1",
+              fillOpacity = .9,
+              highlight = highlightOptions(
+      weight = 5,
+      color = "#ff0066",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE)) %>%
+  addProviderTiles("MapBox",
+                   options = providerTileOptions(id = "mapbox.light", 
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+```
+
+```{r 1990 leaflet bachelors, message=FALSE, warning=FALSE, paged.print=FALSE}
+#making getting it read to join for 2000
+high_school_id4 <- high_school_id %>%
+  group_by(`Percent of adults with a bachelor's degree or higher, 1990`, `Area name`) %>%
+  summarise(count = `Percent of adults with a bachelor's degree or higher, 1990`) %>%
+  separate(`Area name`, c("name", "z"), sep = -7) %>% 
+  select(-z)
+
+#taking out idaho becuase thats the total number of people
+#high_school_id1 <- high_school_id1[-c(45),]
+
+#combining spatial data with high_school_id df
+spatial_dat_id4 <- counties %>%
+  left_join(high_school_id4, by = "name") 
+
+#leaflet for 2000
+#bins <- seq(0, 70000, 4000)
+pal <- colorNumeric("Blues", domain = spatial_dat_id4$`count`)
+
+four <- leaflet(data = spatial_dat_id4) %>%
+  addLegend(pal = pal,
+            values = ~`count`,
+            opacity = .9,
+            title = "bachelor's degree<br> or higher (1990)",
+            labFormat = labelFormat(prefix = "%")) %>%
+  setView(lng = -110.7420, lat = 45.0682, zoom = 5) %>%
+  addTiles() %>%
+  addPolygons(fillColor = ~pal(`count`),
+              label = ~paste0(name, ": % ", formatC(`count`, big.mark = ",")),
+              weight = 1,
+              opacity = .5,
+              color = "black",
+              dashArray = "1",
+              fillOpacity = .9,
+              highlight = highlightOptions(
+      weight = 5,
+      color = "#ff0066",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE)) %>%
+  addProviderTiles("MapBox",
+                   options = providerTileOptions(id = "mapbox.light", 
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+```
+
+```{r latticeView 1990, message=FALSE, warning=FALSE, paged.print=FALSE}
+latticeView(three, four)
+```
+
+```{r comparison 1990, fig.height=5, fig.width=15, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(data = high_school_id_gg) +
+  geom_point(aes(x = `Area name`, y = `d1990`, color = "Diploma", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `d1990`,color = "Diploma", group = 1)) +
+  geom_point(aes(x = `Area name`, y = `b1990`, color = "Bachelors or Higher", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `b1990`, color = "Bachelors or Higher", group = 1)) +
+  scale_color_manual(breaks = c("Diploma", "Bachelors or Higher" ),
+                     values = c("mediumblue","lightskyblue")) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10), labels = function(x) paste0(x,"%")) +
+  coord_cartesian(ylim = c(10,50)) +
+  labs(title = "Educational Attainment Comparison",
+       subtitle = "Year: 1990",
+       x = " ",
+       y = " ",
+       color = "Type") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = rel(2)), axis.text.y = element_text(size = rel(2)),plot.title = element_text(size = 40, face = "bold"), plot.subtitle=element_text(size=30),legend.title=element_text(size=20), legend.text=element_text(size=15))
+```
+
+```{r 2000 leaflet, message=FALSE, warning=FALSE, paged.print=FALSE}
+#making getting it read to join for 2000
+high_school_id5 <- high_school_id %>%
+  group_by(`Percent of adults with a high school diploma only, 2000`, `Area name`) %>%
+  summarise(count = `Percent of adults with a high school diploma only, 2000`) %>%
+  separate(`Area name`, c("name", "z"), sep = -7) %>% 
+  select(-z)
+
+#taking out idaho becuase thats the total number of people
+#high_school_id1 <- high_school_id1[-c(45),]
+
+#combining spatial data with high_school_id df
+spatial_dat_id5 <- counties %>%
+  left_join(high_school_id5, by = "name") 
+
+#leaflet for 2000
+#bins <- seq(0, 70000, 4000)
+pal <- colorNumeric("BuGn", domain = spatial_dat_id5$`count`)
+
+five <- leaflet(data = spatial_dat_id5) %>%
+  addLegend(pal = pal,
+            values = ~`count`,
+            opacity = .9,
+            title = "High school diploma <br>(2000)",
+            labFormat = labelFormat(prefix = "%")) %>%
+  setView(lng = -110.7420, lat = 45.0682, zoom = 5) %>%
+  addTiles() %>%
+  addPolygons(fillColor = ~pal(`count`),
+              label = ~paste0(name, ": % ", formatC(`count`, big.mark = ",")),
+              weight = 1,
+              opacity = .5,
+              color = "black",
+              dashArray = "1",
+              fillOpacity = .9,
+              highlight = highlightOptions(
+      weight = 5,
+      color = "#ff0066",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE)) %>%
+  addProviderTiles("MapBox", 
+                   options = providerTileOptions(id = "mapbox.light", 
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+```
+
+```{r 2000 leaflet bachelors, message=FALSE, warning=FALSE, paged.print=FALSE}
+#making getting it read to join for 2000
+high_school_id6 <- high_school_id %>%
+  group_by(`Percent of adults with a bachelor's degree or higher, 2000`, `Area name`) %>%
+  summarise(count = `Percent of adults with a bachelor's degree or higher, 2000`) %>%
+  separate(`Area name`, c("name", "z"), sep = -7) %>% 
+  select(-z)
+
+#taking out idaho becuase thats the total number of people
+#high_school_id1 <- high_school_id1[-c(45),]
+
+#combining spatial data with high_school_id df
+spatial_dat_id6 <- counties %>%
+  left_join(high_school_id6, by = "name") 
+
+#leaflet for 2000
+#bins <- seq(0, 70000, 4000)
+pal <- colorNumeric("BuGn", domain = spatial_dat_id6$`count`)
+
+six <- leaflet(data = spatial_dat_id6) %>%
+  addLegend(pal = pal,
+            values = ~`count`,
+            opacity = .9,
+            title = "bachelor's degree<br> or higher (2000)",
+            labFormat = labelFormat(prefix = "%")) %>%
+  setView(lng = -110.7420, lat = 45.0682, zoom = 5) %>%
+  addTiles() %>%
+  addPolygons(fillColor = ~pal(`count`),
+              label = ~paste0(name, ": % ", formatC(`count`, big.mark = ",")),
+              weight = 1,
+              opacity = .5,
+              color = "black",
+              dashArray = "1",
+              fillOpacity = .9,
+              highlight = highlightOptions(
+      weight = 5,
+      color = "#ff0066",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE)) %>%
+  addProviderTiles("MapBox", 
+                   options = providerTileOptions(id = "mapbox.light", 
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+```
+
+```{r latticeView 2000, message=FALSE, warning=FALSE, paged.print=FALSE}
+latticeView(five, six)
+```
+
+```{r comparison 2000, fig.height=5, fig.width=15,  message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(data = high_school_id_gg) +
+  geom_point(aes(x = `Area name`, y = `d2000`, color = "Diploma", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `d2000`,color = "Diploma", group = 1)) +
+  geom_point(aes(x = `Area name`, y = `b2000`, color = "Bachelors or Higher", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `b2000`, color = "Bachelors or Higher", group = 1)) +
+  scale_color_manual(breaks = c("Diploma", "Bachelors or Higher"),
+                     values = c("springgreen","springgreen4")) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10), labels = function(x) paste0(x,"%")) +
+  coord_cartesian(ylim = c(10,50)) +
+  labs(title = "Educational Attainment Comparison",
+       subtitle = "Year: 2000",
+       x = " ",
+       y = " ",
+       color = "Type") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = rel(2)), axis.text.y = element_text(size = rel(2)),plot.title = element_text(size = 40, face = "bold"), plot.subtitle=element_text(size=30),legend.title=element_text(size=20), legend.text=element_text(size=15))
+```
+
+```{r 2012-2016 leaflet, message=FALSE, warning=FALSE, paged.print=FALSE}
+#making getting it read to join for 2012-2016
+high_school_id7 <- high_school_id %>%
+  group_by(`Percent of adults with a high school diploma only, 2012-2016`, `Area name`) %>%
+  summarise(count = `Percent of adults with a high school diploma only, 2012-2016`) %>%
+  separate(`Area name`, c("name", "z"), sep = -7) %>% 
+  select(-z)
+#taking out idaho becuase thats the total number of people
+#high_school_id7 <- high_school_id7[-c(45),]
+
+  #combining spatial data with high_school_id df
+spatial_dat_id7 <- counties %>%
+  left_join(high_school_id7, by = "name") 
+
+#leaflet for 2012-2016
+#bins <- seq(0, 70000, 4000)
+pal <- colorNumeric("Purples", domain = spatial_dat_id7$`count`)
+
+seven <- leaflet(data = spatial_dat_id7) %>%
+  addLegend(pal = pal,
+            values = ~`count`,
+            opacity = .9,
+            title = "High school diploma <br>(2012-2016)",
+            labFormat = labelFormat(prefix = "%")) %>%
+  setView(lng = -110.7420, lat = 45.0682, zoom = 5) %>%
+  addTiles() %>%
+  addPolygons(fillColor = ~pal(`count`),
+              label = ~paste0(name, ": % ", formatC(`count`, big.mark = ",")),
+              weight = 1,
+              opacity = .5,
+              color = "black",
+              dashArray = "1",
+              fillOpacity = .9,
+              highlight = highlightOptions(
+      weight = 5,
+      color = "#ff0066",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE)) %>%
+  addProviderTiles("MapBox", 
+                   options = providerTileOptions(id = "mapbox.light", 
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+```
+
+```{r 2012-2016 leaflet bachelors, message=FALSE, warning=FALSE, paged.print=FALSE}
+#making getting it read to join for 2012-2016
+high_school_id8 <- high_school_id %>%
+  group_by(`Percent of adults with a bachelor's degree or higher, 2012-2016`, `Area name`) %>%
+  summarise(count = `Percent of adults with a bachelor's degree or higher, 2012-2016`) %>%
+  separate(`Area name`, c("name", "z"), sep = -7) %>% 
+  select(-z)
+#taking out idaho becuase thats the total number of people
+#high_school_id8 <- high_school_id8[-c(45),]
+
+  #combining spatial data with high_school_id df
+spatial_dat_id8 <- counties %>%
+  left_join(high_school_id8, by = "name") 
+
+#leaflet for 2012-2016
+#bins <- seq(0, 70000, 4000)
+pal <- colorNumeric("Purples", domain = spatial_dat_id8$`count`)
+
+eight <- leaflet(data = spatial_dat_id8) %>%
+  addLegend(pal = pal,
+            values = ~`count`,
+            opacity = .9,
+            title = "bachelor's degree<br> or higher (2012-2016)",
+            labFormat = labelFormat(prefix = "%")) %>%
+  setView(lng = -110.7420, lat = 45.0682, zoom = 5) %>%
+  addTiles() %>%
+  addPolygons(fillColor = ~pal(`count`),
+              label = ~paste0(name, ": % ", formatC(`count`, big.mark = ",")),
+              weight = 1,
+              opacity = .5,
+              color = "black",
+              dashArray = "1",
+              fillOpacity = .9,
+              highlight = highlightOptions(
+      weight = 5,
+      color = "#ff0066",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE)) %>%
+  addProviderTiles("MapBox", 
+                   options = providerTileOptions(id = "mapbox.light", 
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+```
+
+```{r latticeView 2012-2016, message=FALSE, warning=FALSE, paged.print=FALSE}
+latticeView(seven, eight)
+```
+
+```{r comparison 2012-2016, fig.height=5, fig.width=15,  message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(data = high_school_id_gg) +
+  geom_point(aes(x = `Area name`, y = `d2012-2016`, color = "Diploma", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `d2012-2016`, color = "Diploma", group = 1)) +
+  geom_point(aes(x = `Area name`, y = `b2012-2016`, color = "Bachelors or Higher", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `b2012-2016`, color = "Bachelors or Higher", group = 1)) +
+  scale_color_manual(breaks = c("Diploma", "Bachelors or Higher" ),
+                     values = c("purple4", "orchid")) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10), labels = function(x) paste0(x,"%")) +
+  coord_cartesian(ylim = c(10,50)) +
+  labs(title = "Educational Attainment Comparison",
+       subtitle = "Year: 2012-2016",
+       x = " ",
+       y = " ",
+       color = "Type") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = rel(2)), axis.text.y = element_text(size = rel(2)),plot.title = element_text(size = 40, face = "bold"), plot.subtitle=element_text(size=30),legend.title=element_text(size=20), legend.text=element_text(size=15))
+```
+
+```{r dip, fig.height=5, fig.width=15, message=FALSE, warning=FALSE, eval=FALSE, paged.print=FALSE}
+
+ggplot(data = high_school_id_gg) +
+  geom_point(aes(x = `Area name`, y = `d2012-2016`,color = "2012-2016", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `d2012-2016`,color = "2012-2016", group = 1)) +
+  geom_point(aes(x = `Area name`, y = `d2000`, color = "2000", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `d2000`, color = "2000", group = 1)) +
+  geom_point(aes(x = `Area name`, y = `d1990`,  color = "1990", group = 1),size = 2) +
+  geom_line(aes(x = `Area name`, y = `d1990`,  color = "1990", group = 1)) +
+  geom_point(aes(x = `Area name`, y = `d1980`, color = "1980", group = 1),size = 2) +
+  geom_line(aes(x = `Area name`, y = `d1980`, color = "1980", group = 1)) +
+  scale_color_manual(breaks = c("2012-2016", "2000", "1990", "1980" ),
+                      values = c("#cc5200","#005ce6","#009900", "#400080")) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10), labels = function(x) paste0(x,"%")) +
+  coord_cartesian(ylim = c(10,50)) +
+  labs(title = "Percent of Idaho gradutes per County",
+       subtitle = "Diploma"
+       x = " ",
+       y = " ",
+       color = "Type") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = rel(2)), axis.text.y = element_text(size = rel(2)),plot.title = element_text(size = 40, face = "bold"))
+```
+
+
+```{r b,fig.height=5, fig.width=15, message=FALSE, warning=FALSE, eval=FALSE, paged.print=FALSE}
+ggplot(data = high_school_id_gg) +
+  geom_point(aes(x = `Area name`, y = `b2012-2016`,color = "2012-2016", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `b2012-2016`,color = "2012-2016", group = 1)) +
+  geom_point(aes(x = `Area name`, y = `d2000`, color = "2000", group = 1), size = 2) +
+  geom_line(aes(x = `Area name`, y = `d2000`, color = "2000", group = 1)) +
+  geom_point(aes(x = `Area name`, y = `d1990`,  color = "1990", group = 1),size = 2) +
+  geom_line(aes(x = `Area name`, y = `d1990`,  color = "1990", group = 1)) +
+  geom_point(aes(x = `Area name`, y = `d1980`, color = "1980", group = 1),size = 2) +
+  geom_line(aes(x = `Area name`, y = `d1980`, color = "1980", group = 1)) +
+  scale_color_manual(breaks = c("2012-2016", "2000", "1990", "1980" ),
+                      values = c("#cc5200","#005ce6","#009900", "#400080")) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10), labels = function(x) paste0(x,"%")) +
+  coord_cartesian(ylim = c(10,50)) +
+  labs(title = "Percent of Idaho gradutes per County",
+       subtitle = "Bachelors or Higher",
+       x = " ",
+       y = " ",
+       color = "Year") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = rel(2)), axis.text.y = element_text(size = rel(2)),plot.title = element_text(size = 40, face = "bold"))
+```
+
+
+
+## Conclusion
+
+<p id = "words>Over the past three decades the amount of students graduating has decreased, but the percentage of students who graduate with a diploma are still significantly high for each county. Since the percentage of students who graduate with a diploma is significantly high this would lead to the expectation that the amount of students seeking a bachelor's degree or higher would also be significant. The data shows that students are not perusing a postsecondary degree even though each county in Idaho is graduating a significant amount of students. Overall the data confirms that there is ineffectiveness/inadequacy in Idaho's education from county to county, this raises the question what is causing this ineffectiveness in Idaho's education specifically and how can we get more students to seek a postsecondary degree.? In order to answer these questions more data would need to be gathered and analyzed. </p>
+
+
+
+<style>
+@import url('https://fonts.googleapis.com/css?family=Gilda+Display');
+@import url('https://fonts.google.com/specimen/Gugi?selection.family=Gugi');
+@import url('https://fonts.googleapis.com/css?family=Orbitron');
+@import url('https://fonts.google.com/specimen/Black+Han+Sans');
+@import url('https://fonts.google.com/specimen/Playfair+Display');
+#name{
+font-family: 'Gugi', cursive;
+letter-spacing: 5px;
+margin: auto;
+margin-top: 2em;
+text-align: center;
+font-size: 25px;
+color: grey;
+}
+#case{
+font-family: 'Black Han Sans', serif;
+margin: auto;
+text-align: center;
+font-size: 100px;
+letter-spacing: 3px;
+color: black;
+margin-bottom: .5em;
+margin-top: 1.5em;
+}
+#words{
+font-family: 'Playfair Display', serif;
+margin: auto;
+margin-top: 2em;
+text-align: left;
+font-size: 20px;
+}
+
+</style>

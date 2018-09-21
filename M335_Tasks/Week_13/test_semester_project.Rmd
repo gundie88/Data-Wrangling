@@ -1,0 +1,182 @@
+---
+title: "Semester Project"
+author: "Keegan Gunderson"
+date: "March 24, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+library(geofacet)
+library(buildings)
+library(tidyverse)
+library(sf)
+library(maps)
+library(USAboundaries)
+library(ggrepel)
+library(leaflet)
+library(geojsonio)
+
+
+states <- st_as_sf(map("state", plot = FALSE, fill = TRUE))
+id <- us_counties(states = "Idaho", resolution = "high")
+
+#my_proj <- "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+#my_proj <- "+proj=moll +lat_0=45 +lon_0=-115 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+```
+
+```{r make variables, message=FALSE, warning=FALSE, paged.print=FALSE}
+states <- us_states() %>% 
+  filter(!stusps %in% c("PR", "AK", "HI"))
+
+single_family <- permits %>% 
+  filter(year %in% c(2007, 2008, 2009, 2010),
+         variable == "Single Family", !StateAbbr %in% c("AK", "HI"))
+
+us <- single_family %>% 
+  group_by(StateAbbr, year) %>% 
+  summarize(amount = sum(value))
+
+full_us <- us %>% 
+  full_join(states, by = c("StateAbbr" = "stusps"))
+
+permit <- permits %>%
+  filter(variable == "Single Family") %>%
+  group_by(StateAbbr, year) %>%
+  summarise(value = sum(value))
+
+```
+<cente>
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+county <- us_counties() %>% 
+  filter(state_abbr == "ID")
+
+Idaho <- single_family %>% 
+  filter(StateAbbr == "ID") %>% 
+  rename("name" = "countyname") %>% 
+  mutate(name = str_sub(name, end = -8)) 
+
+idaho_county <- county %>% 
+  full_join(Idaho, by = "name")
+
+
+ggplot() +
+  geom_sf(data = idaho_county, aes(fill = value)) +
+  labs(fill = "Number of Permits", 
+       title = "Idaho Permits 2007-2010") +
+  scale_fill_gradient(low = "green", high = "black", trans = "log") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = .5, size = rel(2), face = "bold"))
+```
+</center>
+
+
+```{r Idaho counties}
+#http://sape.inf.usi.ch/quick-reference/ggplot2/colour
+#R for data science chapter 28 for labels
+
+ggplot() +
+  geom_sf(data = states, fill = NA) +
+  geom_sf( data = id, colour = "black", fill = NA) +
+  geom_sf(data = idaho_county, aes(fill = value)) +
+  scale_fill_gradient(low = "green", high = "black", trans = "log") +
+  labs(size = "",
+       x = "",
+       y = "") +
+  theme_bw() +
+    theme(panel.grid.major = element_line(colour = "lightgray"))
+#stuff you can do in theme for the grid
+#panel.grid.minor = element_blank(), 
+#   panel.grid.major = element_blank(),
+#   plot.background = element_rect(fill = "transparent", colour = NA)
+```
+
+
+```{r Idho counties w/curve}
+my_proj <- "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+my_proj <- "+proj=moll +lat_0=45 +lon_0=-115 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+
+states_tr <- states %>% 
+  st_transform( crs = my_proj)
+id1 <- id %>%
+  st_transform( crs = my_proj)
+
+
+ggplot() +
+  geom_sf(data = states_tr, fill = NA, inherit.aes = TRUE) +
+  geom_sf( data = id1, colour = "black", fill = NA, inherit.aes = TRUE) +
+  geom_sf(data = idaho_county, aes(fill = value)) +
+  scale_fill_gradient(low = "green", high = "black", trans = "log") +
+  theme_bw() +
+    theme(panel.grid.major = element_line(colour = "lightgray"))
+```
+
+
+```{r}
+#Messy way to get all of the counties of ID
+#vector <- us_counties() %>% 
+  #filter(state_abbr == "ID")
+#id_count <- as.vector(vector$name)
+
+#counties1 <- us_counties() %>%
+ # mutate("names" = name)
+
+#states <- us_states() %>%
+ # st_set_geometry(NULL)
+
+#counties2 <- counties1 %>% 
+  #left_join(states, by = "name") %>%
+  #st_set_geometry(NULL)
+ # filter(name != "Idaho")
+counties <- us_counties() %>% 
+  filter(state_abbr == "ID")
+
+permits <- buildings::permits
+
+permits1 <- permits %>%
+  filter(variable == "Single Family") %>%
+  mutate(name = str_replace(countyname, " County", "")) %>%
+  group_by(name, year) %>%
+  summarise(`Number of Permits` = n())
+
+spatial_dat <- counties %>%
+  left_join(permits1) %>% 
+  filter(year %in% c(2005:2010))
+
+bins <- seq(0,30, 2)
+pal <- colorBin("plasma", domain = spatial_dat$`Number of Permits`, bins = bins)
+```
+
+```{r}
+leaflet(data = spatial_dat 
+        %>% filter(year == 2005)) %>%
+  addLegend(pal = pal,
+            values = ~`Number of Permits`,
+            opacity = 0.5,
+             title = "Education Rating") %>%
+  setView(lng = -112.7420, lat = 45.0682, zoom = 5) %>%
+  addTiles() %>%
+  addPolygons(fillColor = ~pal(`Number of Permits`),
+              label = ~paste0(name, ": ", formatC(`Number of Permits`, big.mark = ",")),
+              weight = 1,
+              opacity = .5,
+              color = "black",
+              dashArray = "1",
+              fillOpacity = .5,
+              highlight = highlightOptions(
+      weight = 5,
+      color = "#ff0066",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE)) %>%
+  addProviderTiles("MapBox", 
+                   options = providerTileOptions(id = "mapbox.light", 
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+
+
+```
+
+
+

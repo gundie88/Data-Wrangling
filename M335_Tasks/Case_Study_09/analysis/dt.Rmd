@@ -1,0 +1,23 @@
+---
+title: "DT"
+author: "Keegan Gunderson"
+date: "March 8, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+library(mosaic)
+library(DT)
+library(tidyverse)
+```
+
+
+```{r}
+mtcars1 = mtcars[c(1:10, 51:60, 101:110), ]
+datatable(mtcars1, filter = 'top', options = list(
+  pageLength = 5, autoWidth = TRUE, class = c("hover", 'cell-border stripe')
+))
+```
+

@@ -1,0 +1,44 @@
+---
+title: "The US Grocer (KR)"
+author: "Keegan Gunderson"
+date: "March 7, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(tidyquant)
+library(quantmod)
+library(lubridate)
+library(DT)
+library(timetk)
+library(dygraphs)
+
+```
+
+```{r}
+kroger <- "KR" %>%
+  tq_get(get  = "stock.prices",
+         from = "2013-1-01",
+         to   = "2018-03-05")
+
+```
+
+```{r}
+kroger1 <- tk_xts(kroger, silent = TRUE, select = c(date,adjusted))
+
+dygraph(kroger1) %>%
+  dyRangeSelector() %>% 
+  dyOptions(fillGraph = TRUE, fillAlpha = 0.4) %>%
+  dyRangeSelector(height = 20) %>%
+  dyAnnotation("2017-6-16", text = "A", tooltip = "grocery chain's disappointing quarterly report") %>%
+  dyAnnotation("2016-8-2", text = "B", tooltip = "BMO Capital downgraded Kroger due to deflationary prices in food.")
+
+
+```
+
+For my dygrpah I was going to use high and low price but the graph looked too messy. I went with adjusted and date with a range selector so you could zoom in. For this task I just wanted to mess around with the library and familiarize myself with it.  Also hover your mouse over A and B.

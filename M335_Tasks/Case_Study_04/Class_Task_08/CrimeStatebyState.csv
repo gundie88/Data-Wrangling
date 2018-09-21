@@ -1,0 +1,78 @@
+Uniform Crime Reporting Statistics - UCR Data Online
+http://www.ucrdatatool.gov/
+
+Estimated crime in Idaho
+
+,,National or state crime,,,,,,,
+
+,,Violent crime,,,,,,,
+
+Year,Population,Violent crime total,Murder and nonnegligent Manslaughter,Legacy rape /1,Revised rape /2,Robbery,Aggravated assault,
+1960,     667191,         255,          16,          48,,          92,          99 
+1961,     684000,         222,          14,          44,,          64,         100 
+1962,     698000,         234,          21,          25,,          63,         125 
+1963,     713000,         362,          18,          39,,          87,         218 
+1964,     692000,         537,          28,          41,,          71,         397 
+1965,     692000,         493,          14,          38,,          70,         371 
+1966,     694000,         461,          21,          66,,          54,         320 
+1967,     699000,         478,          30,          61,,          76,         311 
+1968,     705000,         518,          16,          59,,          83,         360 
+1969,     718000,         806,          14,          72,,         120,         600 
+1970,     713008,         879,          33,          88,,         146,         612 
+1971,     732000,         917,          24,          77,,         163,         653 
+1972,     756000,       1085,          29,         118,,         156,         782 
+1973,     770000,       1264,          20,         109,,         207,         928 
+1974,     799000,       1465,          45,         128,,         303,         989 
+1975,     820000,       1670,          43,         132,,         344,       1151 
+1976,     831000,       1884,          44,         155,,         332,       1353 
+1977,     857000,       2030,          47,         166,,         339,       1478 
+1978,     878000,       2076,          47,         169,,         351,       1509 
+1979,     905000,       2613,          49,         186,,         392,       1986 
+1980,     943629,       2957,          29,         211,,         442,       2275 
+1981,     959000,       2717,          43,         198,,         362,       2114 
+1982,     965000,       2501,          24,         160,,         292,       2025 
+1983,     989000,       2361,          35,         181,,         270,       1875 
+1984,   1001000,       2355,          34,         187,,         244,       1890 
+1985,   1005000,       2360,          22,         192,,         269,       1877 
+1986,   1003000,       2232,          32,         201,,         214,       1785 
+1987,     998000,       2138,          31,         175,,         242,       1690 
+1988,     999000,       2345,          36,         179,,         202,       1928 
+1989,   1014000,       2582,          26,         236,,         152,       2168 
+1990,   1006749,       2776,          27,         275,,         151,       2323 
+1991,   1039000,       3016,          19,         300,,         215,       2482 
+1992,   1067000,       3003,          37,         339,,         229,       2398 
+1993,   1099000,       3097,          32,         388,,         186,       2491 
+1994,   1133000,       3238,          40,         316,,         209,       2673 
+1995,   1163000,       3745,          48,         330,,         279,       3088 
+1996,   1189000,       3177,          43,         313,,         241,       2580 
+1997,   1210000,       3107,          39,         350,,         237,       2481 
+1998,   1229000,       3468,          36,         386,,         264,       2782 
+1999,   1251700,       3066,          25,         417,,         223,       2401 
+2000,   1293953,       3267,          16,         384,,         223,       2644 
+2001,   1320585,       3211,          30,         425,,         245,       2511 
+2002,   1343124,       3419,          36,         497,,         240,       2646 
+2003,   1367034,       3362,          26,         535,,         245,       2556 
+2004,   1395140,       3452,          31,         594,,         241,       2586 
+2005,   1429367,       3670,          35,         577,,         266,       2792 
+2006,   1466465,       3666,          35,         611,,         294,       2726 
+2007,   1499402,       3841,          49,         607,,         243,       2942 
+2008,   1523816,       3680,          23,         579,,         239,       2839 
+2009,   1545801,       3805,          24,         575,,         254,       2952 
+2010,   1571102,       3464,          22,         533,,         213,       2696 
+2011,   1583744,       3202,          35,         444,,         188,       2535 
+2012,   1595590,       3348,          30,         495,,         243,       2580 
+2013,   1612843,       3471,          29,         516,         674,         220,       2548 
+2014,   1634464,       3468,          32,         468,         609,         204,       2623 
+
+
+		
+		,1. The figures shown in this column for the offense of rape were estimated using the legacy UCR definition of rape - previously known as "Forcible" rape.  See UCR Offense Definitions for further information.
+		
+		,2. The figures shown in this column for the offense of rape were estimated using the revised Uniform Crime Reporting (UCR) definition of rape. In December 2011 the UCR program changed its definition of SRS rape to this revised definition. This change can be seen in the UCR data starting in 2013. Prior to 2013 this column will be blank. See UCR Offense Definitions for further information.
+		
+		
+		,Notes:,National or state offense totals are based on data from all reporting agencies and estimates for unreported areas.
+
+
+"Sources: FBI, Uniform Crime Reports, prepared by the National Archive of Criminal Justice Data" 
+Date of download: Feb 01 2018 

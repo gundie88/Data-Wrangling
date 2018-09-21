@@ -1,0 +1,75 @@
+---
+title: "My investment is better than yours"
+author: "Keegan Gunderson"
+date: "March 5, 2018"
+output: html_document
+code_folding: hide
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(tidyquant)
+library(quantmod)
+library(lubridate)
+
+```
+My stocks 
+
+* Nike
+* Adidas
+* McDonald's
+
+Friend's stocks 
+
+* Apple
+* General Motors
+* Microsoft  
+
+
+
+```{r message=FALSE, warning=FALSE}
+
+#my data
+
+mydata <- c("NKE", "ADS", "MCD") %>%
+  tq_get(get  = "stock.prices",
+         from = "2017-10-01",
+         to   = "2018-03-05") %>%
+  group_by(symbol) %>% 
+  mutate(day = close - open) %>% 
+    mutate(cumsum = cumsum(day))
+ggplot(data = mydata, aes(x = date, y = cumsum)) +
+  geom_line(aes(color = symbol)) +
+  facet_wrap(~symbol, scales = "free") +
+  theme(legend.position = "none") + 
+  labs(x = " ",
+       y = "Closing Price", 
+       title = "Price for days for mine") + 
+  theme_bw()
+
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+#friends data
+
+frienddata <- c("AAPL", "GM", "MSFT") %>%
+  tq_get(get  = "stock.prices",
+         from = "2017-10-01",
+         to   = "2018-03-05") %>%
+  group_by(symbol) %>% 
+  mutate(day = close - open) %>%
+  mutate(cumsum = cumsum(day))
+
+ggplot(data = frienddata, aes(x = date, y = cumsum)) +
+  geom_line(aes(color = symbol)) +
+  facet_wrap(~symbol, scales = "free") +
+  theme(legend.position = "none") + 
+  labs(x = " ",
+       y = "Closing Price", 
+       title = "Price for days for mine") + 
+  theme_bw()
+```
+ 
+
+  

@@ -1,0 +1,69 @@
+---
+title: "Should_we_do_it?"
+author: "Keegan Gunderson"
+date: "March 26, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(Lahman)
+library(blscrapeR)
+library(dplyr)
+library(stringr)
+```
+
+```{r}
+randomletters <- read_lines("https://byuistats.github.io/M335/data/randomletters.txt")
+
+randomletterswnumbers <- read_lines("https://byuistats.github.io/M335/data/randomletters_wnumbers.txt")
+```
+
+```{r}
+
+str_split(randomletters, "")[[1]][c(1,seq(1700, str_count(randomletters), by = 1700))]
+
+#Adding spaces between every charaacter 
+space_separated <- function(x){
+  .l <- unlist(lapply(strsplit(x,''), paste, collapse = ' '))
+  .l}
+
+#run this is he consule: space_separated(Randomletters)
+```
+
+
+```{r}
+
+numbers <- randomletterswnumbers %>%
+  str_match_all("[0-9]+") %>%
+  unlist %>% #puts the list into a vector 
+  as.numeric
+# letters is a default object in R
+letters[numbers]
+
+#get the last n characters from a string
+
+substr_right = function(x,n){
+  substring(x,nchar(x) - n + 1)
+}
+
+#run this in consule: substr_right(randomletters)
+```
+
+```{r}
+randomletterswnumbers %>%
+  str_replace(" ", "") %>%
+  str_replace("\\.", "") %>%
+  str_extract_all("[aeiou]{7}")
+
+#makes everything lowercase
+to_lower <- function(x){
+  tolower(x)
+}
+#run this in consule: to_lower(randomletters)
+```
+
+

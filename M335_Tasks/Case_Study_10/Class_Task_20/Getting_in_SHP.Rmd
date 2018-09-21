@@ -1,0 +1,66 @@
+---
+title: "Getting in SHP"
+author: "Keegan Gunderson"
+date: "March 14, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(downloader)
+library(sf)
+library(tidyverse)
+library(fs)
+
+shp_path <- "https://byuistats.github.io/M335/data/shp.zip"
+wells_path <- "https://research.idwr.idaho.gov/gis/Spatial/Wells/WellConstruction/wells.zip"
+dams_path <- "https://research.idwr.idaho.gov/gis/Spatial/DamSafety/dam.zip"
+rivers_path <- "https://research.idwr.idaho.gov/gis/Spatial/Hydrography/streams_lakes/c_250k/hyd250.zip"
+
+```
+
+```{r}
+### Read in .shp file
+df <- file_temp()
+uf <- path_temp("zip")
+download(shp_path, df, mode = "wb")
+unzip(df, exdir = uf)
+us <- read_sf(file.path(uf, "shp"))
+file_delete(df)
+dir_delete(uf)
+
+#### Read in wells
+df <- file_temp()
+uf <- path_temp("zip")
+download(wells_path, df, mode = "wb")
+unzip(df, exdir = uf)
+wells <- read_sf(uf)
+file_delete(df)
+dir_delete(uf)
+
+#### Read in dams
+df <- file_temp()
+uf <- path_temp("zip")
+download(dams_path, df, mode = "wb")
+unzip(df, exdir = uf)
+dams <- read_sf(uf)
+file_delete(df)
+dir_delete(uf)
+
+#### Read in rivers
+df <- file_temp()
+uf <- path_temp("zip")
+download(rivers_path, df, mode = "wb")
+unzip(df, exdir = uf)
+rivers <- read_sf(uf)
+file_delete(df)
+dir_delete(uf)
+```
+
+```{r}
+#Show lat and long 
+#transformation = "+proj=longlat +datum=WGS84"
+
+
+coord_sf(crs = "+proj=aea +lat_1=25 +lat_2=65 +lat_0=45 +lon_0=-115 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs")
+```
+
